@@ -2,63 +2,137 @@
 
 #include "NodeDataModel.hpp"
 
+#include "Connection.hpp"
+
+using QtNodes::NodeState;
+using QtNodes::NodeDataType;
+using QtNodes::NodeDataModel;
+using QtNodes::PortType;
+using QtNodes::PortIndex;
+using QtNodes::Connection;
+
 NodeState::
 NodeState(std::unique_ptr<NodeDataModel> const &model)
-  : _sources(model->nSlots(PortType::OUT), QUuid())
-  , _sinks(model->nSlots(PortType::IN), QUuid())
+  : _inConnections(model->nPorts(PortType::In))
+  , _outConnections(model->nPorts(PortType::Out))
   , _reaction(NOT_REACTING)
+  , _reactingPortType(PortType::None)
+  , _resizing(false)
 {}
 
 
-std::vector<QUuid> const&
+std::vector<NodeState::ConnectionPtrSet> const &
 NodeState::
 getEntries(PortType portType) const
 {
-  Q_ASSERT(portType != PortType::NONE);
-
-  if (portType == PortType::OUT)
-    return _sources;
+  if (portType == PortType::In)
+    return _inConnections;
   else
-    return _sinks;
+    return _outConnections;
 }
 
 
-QUuid const
+std::vector<NodeState::ConnectionPtrSet> &
 NodeState::
-connectionID(PortType portType, size_t nEntry) const
+getEntries(PortType portType)
 {
-  std::vector<QUuid> const& entries =
-    getEntries(portType);
+  if (portType == PortType::In)
+    return _inConnections;
+  else
+    return _outConnections;
+}
 
-  if (nEntry >= entries.size())
-    return QUuid();
 
-  return entries[nEntry];
+NodeState::ConnectionPtrSet
+NodeState::
+connections(PortType portType, PortIndex portIndex) const
+{
+  auto const &connections = getEntries(portType);
+
+  return connections[portIndex];
 }
 
 
 void
 NodeState::
-setConnectionId(PortType portType, size_t nEntry, QUuid id)
+setConnection(PortType portType,
+              PortIndex portIndex,
+              Connection& connection)
 {
-  std::vector<QUuid> const& entries =
-    const_cast<NodeState const&>(*this).getEntries(portType);
+  auto &connections = getEntries(portType);
 
-  const_cast<std::vector<QUuid>&>(entries)[nEntry] = id;
+  connections[portIndex].insert(std::make_pair(connection.id(),
+                                               &connection));
+}
+
+
+void
+NodeState::
+eraseConnection(PortType portType,
+                PortIndex portIndex,
+                QUuid id)
+{
+  getEntries(portType)[portIndex].erase(id);
 }
 
 
 NodeState::ReactToConnectionState
 NodeState::
 reaction() const
-{ return _reaction; }
+{
+  return _reaction;
+}
+
+
+PortType
+NodeState::
+reactingPortType() const
+{
+  return _reactingPortType;
+}
+
+
+NodeDataType
+NodeState::
+reactingDataType() const
+{
+  return _reactingDataType;
+}
+
 
 void
 NodeState::
-setReaction(ReactToConnectionState reaction)
-{ _reaction = reaction; }
+setReaction(ReactToConnectionState reaction,
+            PortType reactingPortType,
+            NodeDataType reactingDataType)
+{
+  _reaction = reaction;
+
+  _reactingPortType = reactingPortType;
+
+  _reactingDataType = reactingDataType;
+}
+
 
 bool
 NodeState::
 isReacting() const
-{ return _reaction == REACTING; }
+{
+  return _reaction == REACTING;
+}
+
+
+void
+NodeState::
+setResizing(bool resizing)
+{
+  _resizing = resizing;
+}
+
+
+bool
+NodeState::
+resizing() const
+{
+  return _resizing;
+}

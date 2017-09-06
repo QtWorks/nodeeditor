@@ -8,8 +8,13 @@
 
 class QGraphicsSceneMouseEvent;
 
+namespace QtNodes
+{
+
+class FlowScene;
 class Connection;
 class ConnectionGeometry;
+class Node;
 
 /// Graphic Object for connection. Adds itself to scene
 class ConnectionGraphicsObject
@@ -19,43 +24,68 @@ class ConnectionGraphicsObject
 
 public:
 
-  ConnectionGraphicsObject(Connection &connection);
+  ConnectionGraphicsObject(FlowScene &scene,
+                           Connection &connection);
+
+  virtual
+  ~ConnectionGraphicsObject();
+
+  enum { Type = UserType + 2 };
+  int
+  type() const override { return Type; }
 
 public:
 
-  QRectF boundingRect() const override;
+  Connection&
+  connection();
 
-//signals:
+  QRectF
+  boundingRect() const override;
 
-  //void connectionDraggedTo(PortType postType, QPointF const &scenePoint);
+  QPainterPath
+  shape() const override;
 
-public slots:
+  void
+  setGeometryChanged();
 
-  void onItemMoved(QUuid id, QPointF const &offset);
+  /// Updates the position of both ends
+  void
+  move();
 
-  QPainterPath shape() const override;
+  void
+  lock(bool locked);
 
 protected:
 
-  void paint(QPainter* painter,
-             QStyleOptionGraphicsItem const* option,
-             QWidget* widget = 0) override;
+  void
+  paint(QPainter* painter,
+        QStyleOptionGraphicsItem const* option,
+        QWidget* widget = 0) override;
 
-  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void
+  mousePressEvent(QGraphicsSceneMouseEvent* event) override;
 
-  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+  void
+  mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
 
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+  void
+  mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
-  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+  void
+  hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
 
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
+  void
+  hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
 private:
 
-  void addGraphicsEffect();
+  void
+  addGraphicsEffect();
 
 private:
 
-  Connection & _connection;
+  FlowScene & _scene;
+
+  Connection& _connection;
 };
+}

@@ -1,10 +1,16 @@
 #include "ConnectionGeometry.hpp"
 
+#include <cmath>
+
+#include "StyleCollection.hpp"
+
+using QtNodes::ConnectionGeometry;
+using QtNodes::PortType;
+
 ConnectionGeometry::
 ConnectionGeometry()
-  : _out(10, 10)
-  , _in(100, 100)
-  , _pointDiameter(10)
+  : _in(0, 0)
+  , _out(0, 0)
   //, _animationPhase(0)
   , _lineWidth(3.0)
   , _hovered(false)
@@ -14,9 +20,9 @@ QPointF const&
 ConnectionGeometry::
 getEndPoint(PortType portType) const
 {
-  Q_ASSERT(portType != PortType::NONE);
+  Q_ASSERT(portType != PortType::None);
 
-  return (portType == PortType::OUT ?
+  return (portType == PortType::Out ?
           _out :
           _in);
 }
@@ -28,11 +34,11 @@ setEndPoint(PortType portType, QPointF const& point)
 {
   switch (portType)
   {
-    case PortType::OUT:
+    case PortType::Out:
       _out = point;
       break;
 
-    case PortType::IN:
+    case PortType::In:
       _in = point;
       break;
 
@@ -48,11 +54,11 @@ moveEndPoint(PortType portType, QPointF const &offset)
 {
   switch (portType)
   {
-    case PortType::OUT:
+    case PortType::Out:
       _out += offset;
       break;
 
-    case PortType::IN:
+    case PortType::In:
       _in += offset;
       break;
 
@@ -68,16 +74,23 @@ boundingRect() const
 {
   auto points = pointsC1C2();
 
-  QRectF basicRect(_out, _in);
+  QRectF basicRect = QRectF(_out, _in).normalized();
 
-  QRectF c1c2Rect(points.first, points.second);
+  QRectF c1c2Rect = QRectF(points.first, points.second).normalized();
 
-  QMargins margins(_pointDiameter,
-                   _pointDiameter,
-                   _pointDiameter,
-                   _pointDiameter);
+  auto const &connectionStyle =
+    StyleCollection::connectionStyle();
 
-  return basicRect.united(c1c2Rect).marginsAdded(margins);
+  float const diam = connectionStyle.pointDiameter();
+
+  QRectF commonRect = basicRect.united(c1c2Rect);
+
+  QPointF const cornerOffset(diam, diam);
+
+  commonRect.setTopLeft(commonRect.topLeft() - cornerOffset);
+  commonRect.setBottomRight(commonRect.bottomRight() + 2 * cornerOffset);
+
+  return commonRect;
 }
 
 

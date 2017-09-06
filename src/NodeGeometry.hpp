@@ -8,85 +8,141 @@
 #include <QtGui/QFontMetrics>
 
 #include "PortType.hpp"
+#include "Export.hpp"
+
+namespace QtNodes
+{
 
 class NodeState;
 class NodeDataModel;
+class Node;
 
-class NodeGeometry
+class NODE_EDITOR_PUBLIC NodeGeometry
 {
 public:
 
   NodeGeometry(std::unique_ptr<NodeDataModel> const &dataModel);
 
 public:
-  unsigned int height() const { return _height; }
-  void setHeight(unsigned int h) { _height = h; }
+  unsigned int
+  height() const { return _height; }
 
-  unsigned int width() const { return _width; }
-  void setWidth(unsigned int w) { _width = w; }
+  void
+  setHeight(unsigned int h) { _height = h; }
 
-  unsigned int entryHeight() const { return _entryHeight; }
-  void setEntryHeight(unsigned int h) { _entryHeight = h; }
+  unsigned int
+  width() const { return _width; }
 
-  unsigned int entryWidth() const { return _entryWidth; }
-  void setEntryWidth(unsigned int w) { _entryWidth = w; }
+  void
+  setWidth(unsigned int w) { _width = w; }
 
-  unsigned int spacing() const { return _spacing; }
-  void setSpacing(unsigned int s) { _spacing = s; }
+  unsigned int
+  entryHeight() const { return _entryHeight; }
+  void
+  setEntryHeight(unsigned int h) { _entryHeight = h; }
 
-  unsigned int connectionPointDiameter() const
-  { return _connectionPointDiameter; }
-  void setconnectionPointDiameter(unsigned int d)
-  { _connectionPointDiameter = d; }
+  unsigned int
+  entryWidth() const { return _entryWidth; }
 
-  bool hovered() const { return _hovered; }
-  void setHovered(unsigned int h) { _hovered = h; }
+  void
+  setEntryWidth(unsigned int w) { _entryWidth = w; }
 
-  unsigned int nSources() const { return _nSources; }
-  //void setNSources(unsigned int nSources)
-  //{ _nSources = nSources; }
+  unsigned int
+  spacing() const { return _spacing; }
 
-  unsigned int nSinks() const { return _nSinks; }
-  //void setNSinks(unsigned int nSinks)
-  //{ _nSinks = nSinks; }
+  void
+  setSpacing(unsigned int s) { _spacing = s; }
 
-  QPointF const& draggingPos() const
+  bool
+  hovered() const { return _hovered; }
+
+  void
+  setHovered(unsigned int h) { _hovered = h; }
+
+  unsigned int
+  nSources() const { return _nSources; }
+
+  unsigned int
+  nSinks() const { return _nSinks; }
+
+  QPointF const&
+  draggingPos() const
   { return _draggingPos; }
-  void setDraggingPosition(QPointF const& pos)
+
+  void
+  setDraggingPosition(QPointF const& pos)
   { _draggingPos = pos; }
 
-  double opacity() const { return _opacity; }
-
 public:
-  QRectF entryBoundingRect() const;
 
-  QRectF boundingRect() const;
+  QRectF
+  entryBoundingRect() const;
+
+  QRectF
+  boundingRect() const;
 
   /// Updates size unconditionally
-  void recalculateSize();
+  void
+  recalculateSize() const;
 
   /// Updates size if the QFontMetrics is changed
-  void recalculateSize(QFontMetrics const &fontMetrics);
+  void
+  recalculateSize(QFont const &font) const;
 
-  QPointF connectionPointScenePosition(int index,
-                                       PortType portType,
-                                       QTransform t = QTransform()) const;
+  // TODO removed default QTransform()
+  QPointF
+  portScenePosition(PortIndex index,
+                    PortType portType,
+                    QTransform t = QTransform()) const;
 
-  PortIndex checkHitScenePoint(PortType portType,
-                               QPointF const point,
-                               NodeState const& nodeState,
-                               QTransform t = QTransform()) const;
+  PortIndex
+  checkHitScenePoint(PortType portType,
+                     QPointF const point,
+                     QTransform t = QTransform()) const;
+
+  QRect
+  resizeRect() const;
+
+  /// Returns the position of a widget on the Node surface
+  QPointF
+  widgetPosition() const;
+
+  unsigned int
+  validationHeight() const;
+
+  unsigned int
+  validationWidth() const;
+  
+  static 
+  QPointF 
+  calculateNodePositionBetweenNodePorts(PortIndex targetPortIndex, PortType targetPort, Node* targetNode,
+                                        PortIndex sourcePortIndex, PortType sourcePort, Node* sourceNode,
+                                        Node& newNode);
+private:
+
+  unsigned int
+  captionHeight() const;
+
+  unsigned int
+  captionWidth() const;
+
+  unsigned int
+  portWidth(PortType portType) const;
 
 private:
-  unsigned int _width;
-  unsigned int _height;
-  unsigned int _entryWidth;
-  unsigned int _inputSlotWidth;
-  unsigned int _outputSlotWidth;
-  unsigned int _entryHeight;
-  unsigned int _spacing;
 
-  unsigned int _connectionPointDiameter;
+  // some variables are mutable because
+  // we need to change drawing metrics
+  // corresponding to fontMetrics
+  // but this doesn't change constness of Node
+
+  mutable unsigned int _width;
+  mutable unsigned int _height;
+  unsigned int _entryWidth;
+  mutable unsigned int _inputPortWidth;
+  mutable unsigned int _outputPortWidth;
+  mutable unsigned int _entryHeight;
+  unsigned int _spacing;
 
   bool _hovered;
 
@@ -95,9 +151,9 @@ private:
 
   QPointF _draggingPos;
 
-  double _opacity;
-
   std::unique_ptr<NodeDataModel> const &_dataModel;
 
-  QFontMetrics _fontMetrics;
+  mutable QFontMetrics _fontMetrics;
+  mutable QFontMetrics _boldFontMetrics;
 };
+}

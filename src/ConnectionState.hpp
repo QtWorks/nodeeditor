@@ -7,6 +7,10 @@
 #include "PortType.hpp"
 
 class QPointF;
+
+namespace QtNodes
+{
+
 class Node;
 
 /// Stores currently draggind end.
@@ -15,9 +19,12 @@ class ConnectionState
 {
 public:
 
-  ConnectionState(PortType port = PortType::NONE)
+  ConnectionState(PortType port = PortType::None)
     : _requiredPort(port)
   {}
+
+  ConnectionState(const ConnectionState&) = delete;
+  ConnectionState operator=(const ConnectionState&) = delete;
 
   ~ConnectionState();
 
@@ -30,19 +37,20 @@ public:
   { return _requiredPort; }
 
   bool requiresPort() const
-  { return _requiredPort != PortType::NONE; }
+  { return _requiredPort != PortType::None; }
 
   void setNoRequiredPort()
-  { _requiredPort = PortType::NONE; }
+  { _requiredPort = PortType::None; }
 
 public:
 
-  void interactWithNode(std::shared_ptr<Node> node, QPointF const& scenePos);
+  void interactWithNode(Node* node);
 
-  void setLastHoveredNode(QUuid id);
+  void setLastHoveredNode(Node* node);
 
-  QUuid lastHoveredNode() const
-  { return _lastHoveredNodeId; }
+  Node*
+  lastHoveredNode() const
+  { return _lastHoveredNode; }
 
   void resetLastHoveredNode();
 
@@ -50,5 +58,6 @@ private:
 
   PortType _requiredPort;
 
-  QUuid _lastHoveredNodeId;
+  Node* _lastHoveredNode{nullptr};
 };
+}

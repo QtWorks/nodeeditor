@@ -2,11 +2,17 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include <QtCore/QUuid>
 
 #include "PortType.hpp"
+#include "NodeData.hpp"
 
+namespace QtNodes
+{
+
+class Connection;
 class NodeDataModel;
 
 /// Contains vectors of connected input and output connections.
@@ -26,27 +32,64 @@ public:
 
 public:
 
+  using ConnectionPtrSet =
+          std::unordered_map<QUuid, Connection*>;
+
   /// Returns vector of connections ID.
   /// Some of them can be empty (null)
-  std::vector<QUuid> const& getEntries(PortType portType) const;
+  std::vector<ConnectionPtrSet> const&
+  getEntries(PortType) const;
 
-  /// Returns connection id for given endtype and
-  /// given connection number
-  QUuid const connectionID(PortType portType, size_t nEntry) const;
+  std::vector<ConnectionPtrSet> &
+  getEntries(PortType);
 
-  /// Assign connection id to the given entry
-  void setConnectionId(PortType portType, size_t nEntry, QUuid id);
+  ConnectionPtrSet
+  connections(PortType portType, PortIndex portIndex) const;
 
-  ReactToConnectionState reaction() const;
+  void
+  setConnection(PortType portType,
+                PortIndex portIndex,
+                Connection& connection);
 
-  void setReaction(ReactToConnectionState reaction);
+  void
+  eraseConnection(PortType portType,
+                  PortIndex portIndex,
+                  QUuid id);
 
-  bool isReacting() const;
+  ReactToConnectionState
+  reaction() const;
+
+  PortType
+  reactingPortType() const;
+
+  NodeDataType
+  reactingDataType() const;
+
+  void
+  setReaction(ReactToConnectionState reaction,
+              PortType reactingPortType = PortType::None,
+
+              NodeDataType reactingDataType =
+                NodeDataType());
+
+  bool
+  isReacting() const;
+
+  void
+  setResizing(bool resizing);
+
+  bool
+  resizing() const;
 
 private:
 
-  std::vector<QUuid> _sources;
-  std::vector<QUuid> _sinks;
+  std::vector<ConnectionPtrSet> _inConnections;
+  std::vector<ConnectionPtrSet> _outConnections;
 
   ReactToConnectionState _reaction;
+  PortType     _reactingPortType;
+  NodeDataType _reactingDataType;
+
+  bool _resizing;
 };
+}

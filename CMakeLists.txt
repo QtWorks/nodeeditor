@@ -1,17 +1,25 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.2)
+# version 3.4 is required as other do not work with C++14 and clang
 
-project(blocks)
+project(NodeEditor CXX)
+
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
-ADD_DEFINITIONS(-std=c++11)
 
+option(BUILD_EXAMPLES "Build Examples" ON)
 
-set(QT_PATH "~/projects/geoqt5_thirdparty/Linux/Qt")
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${QT_PATH})
 
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS
@@ -23,16 +31,30 @@ find_package(Qt5 COMPONENTS
 add_definitions(${Qt5Widgets_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 
+if(MSVC)
+  add_definitions(/Wall /EHsc)
+else()
+  add_definitions(-Wall -Wextra)
+endif(MSVC)
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #############################################################
 
 file(GLOB_RECURSE LIB_CPPS  ./src/*.cpp )
 
+qt5_add_resources(RESOURCES ./resources/resources.qrc)
+
 # Tell CMake to create the helloworld executable
-add_library(nodes SHARED ${LIB_CPPS})
+add_library(nodes SHARED ${LIB_CPPS} ${RESOURCES})
 
 target_include_directories(nodes INTERFACE "include")
+
+target_compile_definitions(nodes PUBLIC "-DNODE_EDITOR_SHARED")
+target_compile_definitions(nodes PRIVATE "-DNODE_EDITOR_EXPORTS")
 
 target_link_libraries(nodes
                       Qt5::Core
@@ -40,22 +62,6 @@ target_link_libraries(nodes
                       Qt5::Gui
                       Qt5::OpenGL)
 
-#############################################################
-
-file(GLOB_RECURSE EXAMPLE1_CPPS  ./examples/example1/*.cpp )
-
-
-add_executable(example1 ${EXAMPLE1_CPPS})
-
-target_link_libraries(example1
-                      nodes)
-
-#############################################################
-
-file(GLOB_RECURSE EXAMPLE2_CPPS  ./examples/example2/*.cpp )
-
-
-add_executable(example2 ${EXAMPLE2_CPPS})
-
-target_link_libraries(example2
-                      nodes)
+if(BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()

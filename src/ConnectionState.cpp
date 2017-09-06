@@ -7,6 +7,9 @@
 #include "FlowScene.hpp"
 #include "Node.hpp"
 
+using QtNodes::ConnectionState;
+using QtNodes::Node;
+
 ConnectionState::
 ~ConnectionState()
 {
@@ -16,13 +19,11 @@ ConnectionState::
 
 void
 ConnectionState::
-interactWithNode(std::shared_ptr<Node> node, QPointF const& scenePos)
+interactWithNode(Node* node)
 {
   if (node)
   {
-    node->reactToPossibleConnection(_requiredPort, scenePos);
-
-    _lastHoveredNodeId = node->id();
+    _lastHoveredNode = node;
   }
   else
   {
@@ -33,9 +34,9 @@ interactWithNode(std::shared_ptr<Node> node, QPointF const& scenePos)
 
 void
 ConnectionState::
-setLastHoveredNode(QUuid id)
+setLastHoveredNode(Node* node)
 {
-  _lastHoveredNodeId = id;
+  _lastHoveredNode = node;
 }
 
 
@@ -43,11 +44,8 @@ void
 ConnectionState::
 resetLastHoveredNode()
 {
-  auto &scene = FlowScene::instance();
-  std::shared_ptr<Node> n = scene.getNode(_lastHoveredNodeId);
+  if (_lastHoveredNode)
+    _lastHoveredNode->resetReactionToConnection();
 
-  if (n)
-    n->resetReactionToConnection();
-
-  _lastHoveredNodeId = QUuid();
+  _lastHoveredNode = nullptr;
 }

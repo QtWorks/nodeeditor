@@ -4,6 +4,16 @@
 
 #include "ConnectionGeometry.hpp"
 #include "ConnectionState.hpp"
+#include "ConnectionGraphicsObject.hpp"
+#include "Connection.hpp"
+
+#include "NodeData.hpp"
+
+#include "StyleCollection.hpp"
+
+using QtNodes::ConnectionPainter;
+using QtNodes::ConnectionGeometry;
+using QtNodes::Connection;
 
 ConnectionPainter::
 ConnectionPainter()
@@ -50,14 +60,40 @@ getPainterStroke(ConnectionGeometry const& geom)
 }
 
 
+#include <limits>
+
+#include <QDebug>
+
 void
 ConnectionPainter::
 paint(QPainter* painter,
-      ConnectionGeometry const& geom,
-      ConnectionState const& state)
+      Connection const &connection)
 {
-  double const lineWidth     = geom.lineWidth();
-  double const pointDiameter = geom.pointDiameter();
+  auto const &connectionStyle =
+    StyleCollection::connectionStyle();
+
+  QColor normalColor   = connectionStyle.normalColor();
+  QColor hoverColor    = connectionStyle.hoveredColor();
+  QColor selectedColor = connectionStyle.selectedColor();
+
+  auto dataType = connection.dataType();
+
+  if (connectionStyle.useDataDefinedColors())
+  {
+
+    normalColor   = connectionStyle.normalColor(dataType.id);
+    hoverColor    = normalColor.lighter(200);
+    selectedColor = normalColor.darker(200);
+  }
+
+  ConnectionGeometry const& geom =
+    connection.connectionGeometry();
+
+  ConnectionState const& state =
+    connection.connectionState();
+
+  double const lineWidth     = connectionStyle.lineWidth();
+  double const pointDiameter = connectionStyle.pointDiameter();
 
 #ifdef DEBUG_DRAWING
 
@@ -73,24 +109,39 @@ paint(QPainter* painter,
     painter->drawLine(QLineF(source, points.first));
     painter->drawLine(QLineF(points.first, points.second));
     painter->drawLine(QLineF(points.second, sink));
-    painter->drawEllipse(points.first, 4, 4);
-    painter->drawEllipse(points.second, 4, 4);
+    painter->drawEllipse(points.first, 3, 3);
+    painter->drawEllipse(points.second, 3, 3);
 
     painter->setBrush(Qt::NoBrush);
 
-    painter->drawPath(cubicPath());
+    painter->drawPath(cubicPath(geom));
+  }
+
+  {
+    painter->setPen(Qt::yellow);
+
+    painter->drawRect(geom.boundingRect());
   }
 #endif
 
   auto cubic = cubicPath(geom);
 
   bool const hovered = geom.hovered();
-  if (hovered)
+
+  auto const& graphicsObject =
+    connection.getConnectionGraphicsObject();
+
+  bool const selected = graphicsObject.isSelected();
+
+  if (hovered || selected)
   {
     QPen p;
 
     p.setWidth(2 * lineWidth);
-    p.setColor(QColor(Qt::cyan).lighter());
+    p.setColor(selected ?
+               connectionStyle.selectedHaloColor() :
+               hoverColor);
+
     painter->setPen(p);
     painter->setBrush(Qt::NoBrush);
 
@@ -104,12 +155,16 @@ paint(QPainter* painter,
     QPen p;
 
     p.setWidth(lineWidth);
-    p.setColor(QColor(Qt::cyan).darker(150));
+
+    if (selected)
+      p.setColor(selectedColor);
+    else
+      p.setColor(normalColor);
 
     if (state.requiresPort())
     {
-      p.setWidth(2.0);
-      p.setColor(QColor(Qt::gray));
+      p.setWidth(connectionStyle.constructionLineWidth());
+      p.setColor(connectionStyle.constructionColor());
       p.setStyle(Qt::DashLine);
     }
 
@@ -123,8 +178,8 @@ paint(QPainter* painter,
   QPointF const& source = geom.source();
   QPointF const& sink   = geom.sink();
 
-  painter->setPen(Qt::white);
-  painter->setBrush(Qt::white);
+  painter->setPen(connectionStyle.constructionColor());
+  painter->setBrush(connectionStyle.constructionColor());
   double const pointRadius = pointDiameter / 2.0;
   painter->drawEllipse(source, pointRadius, pointRadius);
   painter->drawEllipse(sink, pointRadius, pointRadius);
